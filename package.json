@@ -1,0 +1,12 @@
+{
+  "name": "cookbook",
+  "version": "1.0.0",
+  "description": "Re-frame app for cookbook",
+  "main": "index.js",
+  "scripts": {
+    "build": "lein figwheel once"
+  },
+  "dependencies": {
+    "http-server": "^0.12.3"
+  }
+}
