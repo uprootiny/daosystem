@@ -1,56 +1,52 @@
-name: Deploy
+name: Deployment
 
 on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-
+    name: Deploy
+    strategy:
+      matrix:
+        runs-on: [ubuntu-latest, macos-latest, windows-latest]
+      fail-fast: false
+    runs-on: ${{ matrix.runs-on }}
     steps:
-      # Step 1: Checkout code
       - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          # Ensuring we fetch the full history for context-aware operations
-          fetch-depth: 0
+        uses: actions/checkout@v4
 
-      # Step 2: Install Nix
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 16.x
+
       - name: Install Nix
         run: |
-          set -e
           curl -L https://nixos.org/nix/install | sh
           . /home/runner/.nix-profile/etc/profile.d/nix.sh
           nix-channel --update
-        shell: bash
 
-      # Step 3: Setup Nix environment with required packages
       - name: Setup Nix environment
         run: |
-          set -e
           echo 'with import <nixpkgs> {}; stdenv.mkDerivation {
             name = "my-env";
-            buildInputs = [ clojure truffle ganache-cli solc nodejs npm shadow-cljs ];
+            buildInputs = [ clojure truffle ganache-cli solc shadow-cljs ];
           }' > default.nix
           nix-shell
-        shell: bash
 
-      # Step 4: Install Clojure CLI tools
       - name: Install Clojure CLI
         run: |
-          set -e
           nix-env -iA nixpkgs.clojure
-        shell: bash
 
-      # Step 5: Run Leiningen tests
-      - name: Run tests
+      - name: Run Leiningen tests
         run: lein test
-        shell: bash
         continue-on-error: true
 
-      # Step 6: Deploy to Vercel
       - name: Deploy to Vercel
         uses: amondnet/vercel-action@v20
         with:
@@ -60,17 +56,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Step 7: Deploy Smart Contracts
       - name: Deploy Smart Contracts
         run: |
-          set -e
           if [ -z "${{ secrets.INFURA_PROJECT_ID }}" ] || [ -z "${{ secrets.DEPLOYER_PRIVATE_KEY }}" ]; then
             echo "Error: INFURA_PROJECT_ID or DEPLOYER_PRIVATE_KEY is not set."
             exit 1
           fi
           truffle migrate --network mainnet
+        continue-on-error: true
         env:
           INFURA_PROJECT_ID: ${{ secrets.INFURA_PROJECT_ID }}
           DEPLOYER_PRIVATE_KEY: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
-        shell: bash
-        continue-on-error: true
