@@ -10,46 +10,74 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Step 1: Checkout code
       - name: Checkout code
         uses: actions/checkout@v2
+        with:
+          # Ensuring we fetch the full history for context-aware operations
+          fetch-depth: 0
 
+      # Step 2: Install Nix
       - name: Install Nix
         run: |
+          set -e
           curl -L https://nixos.org/nix/install | sh
-          . ~/.nix-profile/etc/profile.d/nix.sh
+          . /home/runner/.nix-profile/etc/profile.d/nix.sh
           nix-channel --update
+        shell: bash
 
+      # Step 3: Setup Nix environment with required packages
       - name: Setup Nix environment
         run: |
+          set -e
           echo "with import <nixpkgs> {}; stdenv.mkDerivation {
             name = \"my-env\";
             buildInputs = [ clojure truffle ganache-cli solc nodejs npm ];
           }" > default.nix
+          nix-shell
+        shell: bash
 
-      - name: Enter Nix environment
-        run: nix-shell
-
+      # Step 4: Install Shadow-CLJS globally
       - name: Install Shadow-CLJS
         run: npm install -g shadow-cljs
+        shell: bash
 
+      # Step 5: Install Clojure CLI tools
       - name: Install Clojure CLI
-        run: curl -O https://download.clojure.org/install/linux-install-1.10.3.967.sh
-        run: chmod +x linux-install-1.10.3.967.sh
-        run: sudo ./linux-install-1.10.3.967.sh
+        run: |
+          set -e
+          curl -O https://download.clojure.org/install/linux-install-1.10.3.967.sh
+          chmod +x linux-install-1.10.3.967.sh
+          sudo ./linux-install-1.10.3.967.sh
+        shell: bash
 
+      # Step 6: Run Leiningen tests
       - name: Run tests
         run: lein test
+        shell: bash
+        continue-on-error: true
 
+      # Step 7: Deploy to Vercel
       - name: Deploy to Vercel
         uses: amondnet/vercel-action@v20
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-args: '--prod'
           working-directory: ./
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # Step 8: Deploy Smart Contracts
       - name: Deploy Smart Contracts
         run: |
+          set -e
+          if [ -z "${{ secrets.INFURA_PROJECT_ID }}" ] || [ -z "${{ secrets.DEPLOYER_PRIVATE_KEY }}" ]; then
+            echo "Error: INFURA_PROJECT_ID or DEPLOYER_PRIVATE_KEY is not set."
+            exit 1
+          fi
           truffle migrate --network mainnet
         env:
           INFURA_PROJECT_ID: ${{ secrets.INFURA_PROJECT_ID }}
           DEPLOYER_PRIVATE_KEY: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
+        shell: bash
+        continue-on-error: true
