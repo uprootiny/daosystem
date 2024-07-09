@@ -1,3 +1,7 @@
+name: ClojureScript CI
+
+on: [push, pull_request]
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -7,12 +11,5 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 1.8
-      - name: Install dependencies
-        run: lein deps
       - name: Run Tests
         run: lein test
-      - name: Build
-        run: lein cljsbuild once min
-      - name: Deploy
-        if: github.ref == 'refs/heads/main'
-        run: ./deploy_script.sh
