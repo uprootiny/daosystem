@@ -1,0 +1,15 @@
+{:goals
+ {:G0 {:description "Master Hyperstition Goal Graph Paradigm"
+      :subgoals
+      {:G1 {:description "Understand the Fundamentals of Hyperstition"
+           :subgoals
+           {:G1.1 {:description "Research Hyperstition Concepts"
+                  :subgoals
+                  {:G1.1.1 {:description "Identify key literature and sources"}
+                   :G1.1.2 {:description "Summarize core concepts in your own words"}
+                   :G1.1.3 {:description "Discuss concepts with peers or online communities"}}}
+            :G1.2 {:description "Study Goal Graph Paradigms"
+                  :subgoals
+                  {:G1.2.1 {:description "Find examples of goal graph paradigms"}
+                   :G1.2.2 {:description "Compare and contrast with hyperstition"}
+                   :G1.2.3 {:description "Create a concept map linking hyperstition to goal graphs"}}}}}}}}

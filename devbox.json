@@ -1,0 +1,7 @@
+{
+  "packages": [
+    "babashka",
+    "hiccup",
+    "cheshire"
+  ]
+}
